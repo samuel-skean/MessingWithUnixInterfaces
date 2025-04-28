@@ -56,8 +56,13 @@ int main(int argc, char *argv[]) {
 
 	while (1) {
 		// Though I am not using pause, I still have the race-condition
-		// problem with pause described here because signals could arrive
-		// whenever:
+		// problem with pause described below because signals could arrive
+		// whenever, including before sigsuspend().
+		// But, my use case is actually one where the "main program"
+		// (everything but the signal handlers) does not need to be aware of
+		// the arrival of a signal, so who cares!
+		//
+		// In a sense, I should really be using pause.
 		//
 		// https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Pause-Problems.html#Pause-Problems
 		assert(sigsuspend(&no_sigs) == -1);

@@ -1,0 +1,1 @@
+- Why is umask a thing? Does it serve a security purpose?

@@ -2,7 +2,9 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 // Notes:
 //
@@ -37,9 +39,6 @@ int main(int argc, char *argv[]) {
 	sigset_t all_sigs;
 	sigfillset(&all_sigs);
 
-	sigset_t no_sigs;
-	sigemptyset(&no_sigs);
-
 	const struct sigaction sighup_act = {
 //		.sa_flags = SA_SIGINFO,
 //		.sa_sigaction = sighup_sigaction_handler,
@@ -55,18 +54,22 @@ int main(int argc, char *argv[]) {
 	}
 
 	while (1) {
-		// Though I am not using pause, I still have the race-condition
-		// problem with pause described below because signals could arrive
-		// whenever, including before sigsuspend().
+		// I am close to having the race-condition described below associated with `pause`,
+		// because I may receive the signal I'm interested in (`SIGHUP`) at any time,
+		// including before `pause`. This would cause `pause` to pause until the *next*
+		// receipt of a signal - I am not guaranteed to have control in this function after
+		// every receipt of a signal.
+		//
+		// `sigsuspend` on its own would not help with this, but `sigprocmask` and `sigsuspend`
+		// together would.
+		//
 		// But, my use case is actually one where the "main program"
 		// (everything but the signal handlers) does not need to be aware of
 		// the arrival of a signal, so who cares!
 		//
-		// In a sense, I should really be using pause.
-		//
 		// https://www.gnu.org/savannah-checkouts/gnu/libc/manual/html_node/Pause-Problems.html#Pause-Problems
-		assert(sigsuspend(&no_sigs) == -1);
-		perror("sigsuspend() interrupted by: ");
+		assert(pause() == -1);
+		assert(errno == EINTR);
 	}
 }
 

@@ -3,8 +3,8 @@ use std::{fs::File, os::fd::FromRawFd, process::ExitCode};
 fn main() -> ExitCode {
     let mut stat_buf = [0u8; 0x1000]; // If this isn't big enough I'll lose my mind.
     if unsafe { libc::fstat(3, &raw mut stat_buf as *mut libc::stat) } == -1 {
-        eprintln!("This program is intended to be started with a regular file opened at file descriptor 0.\
-                   No file was opened at file descriptor 0.\
+        eprintln!("This program is intended to be started with a regular file opened at file descriptor 3.\
+                   No file was opened at file descriptor 3.\
                    As of now, this program does not check the type of the file.");
         return ExitCode::FAILURE;
     }

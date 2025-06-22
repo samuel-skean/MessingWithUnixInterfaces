@@ -2,7 +2,7 @@ use libc::*;
 
 // You can do it! It does resume your process after running your handler!
 
-extern "C" fn handler(signum: c_int, siginfo: *const siginfo_t, ucontext: *mut c_void) {
+extern "C" fn handler(_signum: c_int, _siginfo: *const siginfo_t, _ucontext: *mut c_void) {
     unsafe {
         write(1, b"hi\n" as *const u8 as *const _, 3);
     }

@@ -1,6 +1,7 @@
 use libc::{WEXITSTATUS, WIFEXITED, WIFSIGNALED, execvp, fork, perror, waitpid};
 
-// Note: This program is *very unfinished*. To use it to perform the experiment it's meant to perform, you must run it in the background, discover the pid of cat that it spawns (I use `pstree -p $$`), send a SIGINT to the process running cat that it spawns (`kill -INT <pid of cat>`), and then foreground it (`fg`). That sentence is a little sloppy with the antecedents of 'it' - sometimes 'it' is a program, sometimes 'it' is a job (pgroup?). I used bash for this experiment.
+// Note: This program is *very unfinished*. To use it to perform the experiment it's meant to perform, you must run it in the background, discover the pid of cat that it spawns (I use `pstree -p $$`), send a SIGINT to the process running cat that it spawns (`kill -INT <pid of cat>`), and then foreground it (`fg`).
+// That sentence is a little sloppy with the antecedents of 'it' - sometimes 'it' is a program, sometimes 'it' is a job (pgroup?). I used bash for this experiment.
 
 // Purpose + Outstanding Question: What's bash doing to get $? when a process was killed by a signal? `man 2 waitpid` says there's one thing it could be doing that'd be UB (well, not something defined to be reliable by the standard).
 // Intermediate answer: I was totally wrong! Don't know right now how bash/dash/zsh get 130 when a process was killed by SIGINT. See comment by the final assert.

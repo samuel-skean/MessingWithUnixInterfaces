@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use libc::{fork, pid_t, setpgid};
 
 pub enum DesiredPgrpState {
@@ -12,7 +14,10 @@ impl DesiredPgrpState {
     }
 }
 
-pub fn spawn_child_in_pgrp(pgrp_state: DesiredPgrpState) -> pid_t {
+pub fn spawn_child_in_pgrp(
+    pgrp_state: DesiredPgrpState,
+    spawn_shortlived_grandchild: bool,
+) -> pid_t {
     let pgid_arg = match pgrp_state {
         DesiredPgrpState::NonLeaderMemberOf { pgid } => pgid,
         DesiredPgrpState::Leader => 0,
@@ -20,9 +25,20 @@ pub fn spawn_child_in_pgrp(pgrp_state: DesiredPgrpState) -> pid_t {
     let forkret = unsafe { fork() };
 
     if forkret == 0 {
-        // Child 1
+        // Child
         unsafe { setpgid(0, pgid_arg) };
 
+        if spawn_shortlived_grandchild {
+            let forkret = unsafe { fork() };
+            if forkret == 0 {
+                // Grandchild
+
+                // Grandchild exits fast with a failure code, not that it will be observed by the parent.
+                std::process::exit(1);
+            }
+            assert!(forkret > 0);
+        }
+        std::thread::sleep(Duration::from_secs(2));
         std::process::exit(0);
     }
     // Parent

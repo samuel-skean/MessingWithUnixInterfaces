@@ -1,7 +1,7 @@
-use libc::{
-    SIGINT, SYS_wait4, WEXITSTATUS, WIFEXITED, WIFSIGNALED, WTERMSIG, fork, raise, rusage, syscall,
-    waitpid,
-};
+use libc::{SIGINT, WEXITSTATUS, WIFEXITED, WIFSIGNALED, WTERMSIG, fork, raise, waitpid};
+
+#[cfg(target_os = "linux")]
+use libc::{SYS_wait4, rusage, syscall};
 
 // Purpose/Initial Motivating Question: What's bash doing to get $? when a process was killed by a signal? `man 2 waitpid` says there's one thing it could be doing that'd be unreliable (using WEXITSTATUS when WIFEXITED was false).
 // RESULT: bash (at least) just adds 128 to the number of the signal, obtained in some normal way (I haven't looked in the sources, but I bet it's `WIFSIGNALED` and `WIFEXITED`). This creates a collision with lots of otherwise valid (failure) return codes :(. Documented here: https://www.gnu.org/software/bash/manual/bash.html#Exit-Status
@@ -10,7 +10,8 @@ use libc::{
 fn main() {
     // NOTE: This technique for isolating the choice of syscall to use relies heavily on the fact that raw syscalls (like `SYS_wait4`) and glibc wrappers (like `waitpid`) both return negative numbers to indicate error. Thankfully, this is a pretty common convention.
     // What's less common is that we don't care at all about what the error condition was. That's what really makes this hack work.
-    if cfg!(target_os = "linux") {
+    #[cfg(target_os = "linux")]
+    {
         println!("Checking the raw syscall wait4:");
         println!();
         do_check_with_waiting_func(|child_pid, wait_status_addr| unsafe {
@@ -22,8 +23,10 @@ fn main() {
                 std::ptr::null_mut::<rusage>(),
             )
         });
-    } else {
-        println!("You aren't on Linux, so this program doesn't check `SYS_wait4`.");
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        println!("This program wasn't compiled for Linux, so it doesn't check `SYS_wait4`.");
     }
     println!();
 

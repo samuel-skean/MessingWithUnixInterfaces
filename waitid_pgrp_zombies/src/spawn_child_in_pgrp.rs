@@ -27,6 +27,8 @@ pub fn spawn_child_in_pgrp(pgrp_state: DesiredPgrpState) -> pid_t {
     }
     // Parent
 
+    assert!(forkret > 0);
+
     let child_pid = forkret;
     unsafe { setpgid(child_pid, pgid_arg) };
 

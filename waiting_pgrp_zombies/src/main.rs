@@ -22,7 +22,7 @@ const NUM_CHILDREN: usize = 20;
 // >          is equal to that of the calling process at the time of the
 // >          call to waitpid().
 //
-// [FreeBSD] and [OpenBSD] - even [macOS] (old link, but verified with `man 2 wait` on macOS 15.5), which has no `waitid` call - describe the behavior of `waitpid` more ambiguously when the process group id is specified. They all say
+// [FreeBSD](https://man.freebsd.org/cgi/man.cgi?query=waitpid) and [OpenBSD](https://man.openbsd.org/waitpid.2) - even [macOS](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/waitpid.2.html) (old link, but verified with `man 2 wait` on macOS 15.5), which has no `waitid` call - describe the behavior of `waitpid` more ambiguously when the process group id is specified. They all say
 // > If pid is less than -1, the call waits for any process whose
 // > process group id equals the absolute value of pid.
 // With variations only in capitalization of id and how they spell the name of the parameter (some say `pid`, some say `wpid`).

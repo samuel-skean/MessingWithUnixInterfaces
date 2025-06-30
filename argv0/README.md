@@ -1,3 +1,5 @@
+Swift is clearly the odd one out.
+
 All binaries print their argvs.
 They also print what was observed on Linux when invoking them from bash with no slashes on the command line with them added to the PATH.
 TODO: Double check the interpretation of what's going on in python3 and bash. I haven't found that documented, but I haven't looked - it's just my best guess at unifying the behavior I'm seeing. Try executing with './' in the PATH and "${PWD}" in the PATH to replicate.

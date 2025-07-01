@@ -1,8 +1,4 @@
-use std::time::Duration;
-
 use libc::{fork, pid_t, setpgid};
-
-use crate::GRANDCHILD_SLEEP_TIME;
 
 pub enum DesiredPgrpState {
     NonLeaderMemberOf { pgid: pid_t },

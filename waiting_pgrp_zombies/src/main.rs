@@ -52,19 +52,20 @@ fn main() {
 
     let mut successfully_waited_child_pids = [None; NUM_CHILDREN];
 
-    // COMPLAINT: Why is this while loop pattern so *tricky* for me? Every time I have to think a bunch or write duplicate code. The duplicate code unsurprisingly causes errors.
-    let mut child_info_p_unfilled = std::mem::MaybeUninit::<siginfo_t>::zeroed();
-    let mut waitidret = unsafe {
-        waitid(
-            P_PGID,
-            leader_child_pid.try_into().unwrap(),
-            child_info_p_unfilled.as_mut_ptr(),
-            WEXITED,
-        )
-    };
+    let mut child_info_p_unfilled;
 
     let mut child_waited_idx = 0;
-    while waitidret == 0 {
+    while {
+        child_info_p_unfilled = std::mem::MaybeUninit::<siginfo_t>::zeroed();
+        unsafe {
+            waitid(
+                P_PGID,
+                leader_child_pid.try_into().unwrap(),
+                child_info_p_unfilled.as_mut_ptr(),
+                WEXITED,
+            ) == 0
+        }
+    } {
         // SAFETY: waitid did not error
         let child_info_p = unsafe { child_info_p_unfilled.assume_init() };
 
@@ -84,17 +85,6 @@ fn main() {
 
         successfully_waited_child_pids[child_waited_idx] = Some(unsafe { child_info_p.si_pid() });
         child_waited_idx += 1;
-
-        child_info_p_unfilled = std::mem::MaybeUninit::<siginfo_t>::zeroed();
-
-        waitidret = unsafe {
-            waitid(
-                libc::P_PGID,
-                leader_child_pid.try_into().unwrap(),
-                child_info_p_unfilled.as_mut_ptr(),
-                WEXITED,
-            )
-        };
     }
 
     let waitid_errno = unsafe { *__errno_location() };

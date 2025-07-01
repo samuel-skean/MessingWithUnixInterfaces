@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use libc::{fork, pid_t, setpgid};
 
+use crate::GRANDCHILD_SLEEP_TIME;
+
 pub enum DesiredPgrpState {
     NonLeaderMemberOf { pgid: pid_t },
     Leader,
@@ -33,12 +35,13 @@ pub fn spawn_child_in_pgrp(
             if forkret == 0 {
                 // Grandchild
 
-                // Grandchild exits fast with a failure code, not that it will be observed by the parent.
+                // Grandchild exits fast with a failure code, which will not be observed by the parent.
+                std::thread::sleep(crate::GRANDCHILD_SLEEP_TIME);
                 std::process::exit(1);
             }
             assert!(forkret > 0);
         }
-        std::thread::sleep(Duration::from_secs(2));
+        std::thread::sleep(crate::CHILD_SLEEP_TIME);
         std::process::exit(0);
     }
     // Parent

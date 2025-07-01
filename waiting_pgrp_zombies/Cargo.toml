@@ -1,5 +1,5 @@
 [package]
-name = "waitid_pgrp_zombies"
+name = "waiting_pgrp_zombies"
 version = "0.1.0"
 edition = "2024"
 

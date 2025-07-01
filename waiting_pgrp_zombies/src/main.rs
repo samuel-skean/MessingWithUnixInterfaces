@@ -1,11 +1,19 @@
 mod spawn_child_in_pgrp;
 
+use std::time::Duration;
+
 use libc::{
     __errno_location, CLD_EXITED, ECHILD, P_PGID, SIGCHLD, WEXITED, perror, siginfo_t, waitid,
 };
 use spawn_child_in_pgrp::{DesiredPgrpState, spawn_child_in_pgrp};
 
 const NUM_CHILDREN: usize = 20;
+const CHILD_SLEEP_TIME: Duration = Duration::from_secs(0);
+const GRANDCHILD_SLEEP_TIME: Duration = Duration::from_secs(2);
+const _: () = assert!(
+    CHILD_SLEEP_TIME.as_nanos() < GRANDCHILD_SLEEP_TIME.as_nanos(),
+    "The `CHILD_WAIT_TIME` should be less than the `GRANDCHILD_WAIT_TIME` to fit with the documentation in the comments."
+);
 
 // Motivating Question: Does waiting on a pgroup wait on descendents or just children in that pgroup?
 // I think if it waits on descendents, that can create hella races otherwise avoided by the existence of the zombie phase in a process's life cycle.
@@ -27,7 +35,8 @@ const NUM_CHILDREN: usize = 20;
 // > process group id equals the absolute value of pid.
 // With variations only in capitalization of id and how they spell the name of the parameter (some say `pid`, some say `wpid`).
 // TODO: Test this same behavior, but with `waitpid`, and on macOS. I'm nearly certain that the behavior will be the same as with `waitid`.
-// TODO: Explain better how exactly this example works.
+//
+// HOW THIS TEST WORKS: This program spawns `NUM_CHILDREN` children, one of which will spawn a grandchild (see the function `spawn_child_in_pgrp`).  The direct children terminate after `CHILD_WAIT_TIME` with a success exit code. The grandchild terminates after `GRANDCHILD_WAIT_TIME` with a failure exit code. The initial process does not wait on the grandchild, which can be proven because it asserts that the exit codes of all of the things it waits on are success, and the grandchild returns with failure. In addition, `CHILD_WAIT_TIME` is longer than `GRANDCHILD_WAIT_TIME` (ensured by an assertion), so the main process ends quicker than `GRANDCHILD_WAIT_TIME`, which can be felt/seen from the command line, and that remaining grandchild can be observed after the initial process has completed by running `pgrep -f --list-full waiting_pgrp_zombies` (or `pgrep -f --list-full --parent 1 waiting_pgrp_zombies`, to confirm it's been reparented to init, which is usually the case).
 fn main() {
     let mut spawned_child_pids = [None; NUM_CHILDREN];
 
@@ -68,7 +77,7 @@ fn main() {
             println!("  si_status = {}", child_info_p.si_status());
             println!("  si_code = {}", child_info_p.si_code);
 
-            // All children should exit cleanly:
+            // All children should exit cleanly. Any grandchildren will exit with an error code, so this assertion ensures we aren't waiting on the grandchildren. See function `spawn_child_in_pgrp` for how grandchildren are spawned.
             assert_eq!(child_info_p.si_code, CLD_EXITED);
             assert_eq!(child_info_p.si_status(), 0);
         }

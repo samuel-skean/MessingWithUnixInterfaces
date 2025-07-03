@@ -52,38 +52,38 @@ fn main() {
 
     let mut successfully_waited_child_pids = [None; NUM_CHILDREN];
 
-    let mut child_info_p_unfilled;
+    let mut child_info_unfilled;
 
     let mut child_waited_idx = 0;
     while {
-        child_info_p_unfilled = std::mem::MaybeUninit::<siginfo_t>::zeroed();
+        child_info_unfilled = std::mem::MaybeUninit::<siginfo_t>::zeroed();
         unsafe {
             waitid(
                 P_PGID,
                 leader_child_pid.try_into().unwrap(),
-                child_info_p_unfilled.as_mut_ptr(),
+                child_info_unfilled.as_mut_ptr(),
                 WEXITED,
             ) == 0
         }
     } {
         // SAFETY: waitid did not error
-        let child_info_p = unsafe { child_info_p_unfilled.assume_init() };
+        let child_info = unsafe { child_info_unfilled.assume_init() };
 
         unsafe {
             println!("Fields of siginfo_t written by waitid:");
-            println!("  si_pid = {}", child_info_p.si_pid());
-            println!("  si_uid = {}", child_info_p.si_uid());
-            println!("  si_signo = {}", child_info_p.si_signo);
-            assert_eq!(child_info_p.si_signo, SIGCHLD); // Always true.
-            println!("  si_status = {}", child_info_p.si_status());
-            println!("  si_code = {}", child_info_p.si_code);
+            println!("  si_pid = {}", child_info.si_pid());
+            println!("  si_uid = {}", child_info.si_uid());
+            println!("  si_signo = {}", child_info.si_signo);
+            assert_eq!(child_info.si_signo, SIGCHLD); // Always true.
+            println!("  si_status = {}", child_info.si_status());
+            println!("  si_code = {}", child_info.si_code);
 
             // All children should exit cleanly. Any grandchildren will exit with an error code, so this assertion ensures we aren't waiting on the grandchildren. See function `spawn_child_in_pgrp` for how grandchildren are spawned.
-            assert_eq!(child_info_p.si_code, CLD_EXITED);
-            assert_eq!(child_info_p.si_status(), 0);
+            assert_eq!(child_info.si_code, CLD_EXITED);
+            assert_eq!(child_info.si_status(), 0);
         }
 
-        successfully_waited_child_pids[child_waited_idx] = Some(unsafe { child_info_p.si_pid() });
+        successfully_waited_child_pids[child_waited_idx] = Some(unsafe { child_info.si_pid() });
         child_waited_idx += 1;
     }
 

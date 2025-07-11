@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -124,7 +125,7 @@ void sighup_sigaction_handler(int sig, siginfo_t *info, void *ucontext) {
 
 	// siginfo_t may be a union, but these should work regardless of signal.
 	if (info->si_code == SI_USER || info->si_code == SI_QUEUE) {
-		fprintf(logfile, "SIGNO: %d si_code: %d Sender's PID: %d Sender's real UID: %d\n", info->si_signo, info->si_code, info->si_pid, info->si_uid);
+		fprintf(logfile, "SIGNO: %jd si_code: %jd Sender's PID: %jd Sender's real UID: %jd\n", (intmax_t) info->si_signo, (intmax_t) info->si_code, (intmax_t) info->si_pid, (intmax_t) info->si_uid);
 	} else {
 		fprintf(logfile, "SIGNO: %d si_code: %d\n", info->si_signo, info->si_code);
 	}
